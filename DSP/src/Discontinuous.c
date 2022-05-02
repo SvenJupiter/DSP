@@ -147,12 +147,12 @@ dsp_quantization_t* dsp_quantizer_create(const real_t offset, const real_t inter
     return quantizer;
 }
 
-dsp_quantization_t* dsp_dsp_rounding_create(const size_t precision, const rounding_method_t method) {
+dsp_quantization_t* dsp_rounding_create(const size_t precision, const rounding_method_t method) {
     const real_t interval = powf(10, -precision);
     return dsp_quantizer_create(0, interval, method);
 }
 
-bool dsp_dsp_rounding_set_precision(dsp_quantization_t* const rounder, const size_t precision, const rounding_method_t method) {
+bool dsp_rounding_set_precision(dsp_quantization_t* const rounder, const size_t precision, const rounding_method_t method) {
     const real_t interval = powf(10, -precision);
     return dsp_quantizer_set_parameters(rounder, 0, interval, method);
 }
