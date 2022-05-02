@@ -64,9 +64,11 @@ DSP_FUNCTION bool dsp_polynomial_divide(dsp_poly_t* const q, dsp_poly_t* const r
 
 // Fit
 DSP_FUNCTION bool dsp_polynomial_fit(dsp_poly_t* const p, const real_t* const x, const real_t* const y, const size_t size);
+DSP_FUNCTION bool dsp_polyfit(real_t* const p, const size_t order, const real_t* const x, const real_t* const y, const size_t size);
 
 // Evaluate
 DSP_FUNCTION real_t dsp_polynomial_val(const dsp_poly_t* const p, const real_t x);
+DSP_FUNCTION real_t dsp_polyval(const real_t* const p, const size_t order, const real_t x);
 
 // Change size
 DSP_FUNCTION bool dsp_polynomial_shrink_to_fit(dsp_poly_t* const p);

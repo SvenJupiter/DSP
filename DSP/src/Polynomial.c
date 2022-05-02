@@ -299,19 +299,19 @@ bool dsp_polynomial_fit(dsp_poly_t* const p, const real_t* const x, const real_t
     dsp_matrix_t* const V = dsp_matrix_create_vandermonde(p->order, x, size);
 
     // Put y into a Vector struct
-    const dsp_vector_t B = {
+    const dsp_vector_t Y = {
         .elements = (real_t*) y,
         .size = size
     };
 
     // Put p into a Vector struct
-    dsp_vector_t X = {
+    dsp_vector_t P = {
         .elements = p->a,
         .size = p->order + 1
     };
 
     // Solve
-    if (dsp_vector_solve_lse(&X, V, &B)) {
+    if (dsp_vector_solve_lse(&P, V, &Y)) {
         dsp_matrix_destroy(V);
         return true;
     }
@@ -319,6 +319,18 @@ bool dsp_polynomial_fit(dsp_poly_t* const p, const real_t* const x, const real_t
         dsp_matrix_destroy(V);
         return false;
     }
+}
+bool dsp_polyfit(real_t* const p, const size_t order, const real_t* const x, const real_t* const y, const size_t size) {
+    if (p == NULL || x == NULL || y == NULL) { return false; }
+    if (size == 0) { return false; }
+
+    // Put p into a Polynomial struct
+    dsp_poly_t P = {
+        .a = p,
+        .order = order
+    };
+
+    return dsp_polynomial_fit(&P, x, y, size);
 }
 
 // Evaluate
@@ -334,6 +346,18 @@ real_t dsp_polynomial_val(const dsp_poly_t* const p, const real_t x) {
     // return
     return accumulator;
 }
+real_t dsp_polyval(const real_t* const p, const size_t order, const real_t x) {
+    if (p == NULL) { return 0; }
+
+    // Put p into a Polynomial struct
+    const dsp_poly_t P = {
+        .a = (real_t*) p,
+        .order = order
+    };
+
+    return dsp_polynomial_val(&P, x);
+}
+
 
 // Change size
 bool dsp_polynomial_shrink_to_fit(dsp_poly_t* const p) {
