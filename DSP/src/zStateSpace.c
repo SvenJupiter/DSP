@@ -421,6 +421,37 @@ bool dsp_zss_set_state(dsp_zss_t* const zss, const real_t* const x0) {
     }
 }
 
+bool dsp_zss_set_initial_conditions_to(dsp_zss_t* const zss, const dsp_vector_t* const u0, const dsp_vector_t* const y0) {
+    if (zss == NULL || u0 == NULL || y0 == NULL) { return false; }
+    // x0 = inv(C) * (y0 - D * u0)
+
+    dsp_matrix_t* const inv_C = dsp_matrix_create_pinv(zss->C);
+    dsp_vector_t* const acc = dsp_vector_create_copy(y0);
+    if (inv_C == NULL && acc == NULL) {
+        dsp_vector_destroy(acc); // NULL safe
+        dsp_matrix_destroy(inv_C); // NULL safe
+        return false;
+    }
+
+    // acc = y0 - D * u0
+    dsp_matrix_vector_multiply_and_subtract_from_vector(acc, zss->D, u0);
+
+    // x0 = inv(c) * acc
+    dsp_matrix_vector_multiply(zss->x, inv_C, acc);
+    dsp_vector_copy_assign(zss->xn, zss->x);
+
+    dsp_vector_destroy(acc);
+    dsp_matrix_destroy(inv_C);
+    return true;
+}
+bool dsp_zss_set_initial_conditions(dsp_zss_t* const zss, const real_t* const u0, const real_t* const y0) {
+    if (zss == NULL || u0 == NULL || y0 == NULL) { return false; }
+    dsp_vector_t U0 = { .elements = (real_t*) u0, .size = zss->B->columns };
+    dsp_vector_t Y0 = { .elements = (real_t*) y0, .size = zss->C->rows };
+    return dsp_zss_set_initial_conditions_to(zss, &U0, &Y0);
+}
+
+
 // Reset state
 bool dsp_zss_reset(dsp_zss_t* const zss) {
     if (zss == NULL) { return false; }
@@ -429,48 +460,80 @@ bool dsp_zss_reset(dsp_zss_t* const zss) {
         dsp_vector_set_to_zero(zss->x);
 }
 
+
+bool dsp_zss_has_feedthrough(const dsp_zss_t* const zss) {
+    if (zss == NULL) { return false; }
+    
+    // For all elements of the D-Matrix
+    for (size_t k = 0; k < (zss->D->rows * zss->D->columns); ++k) {
+
+        // Check all elements until we find a non-zero element
+        if (zss->D->elements[k] != 0) { return true; }
+    }
+
+    // If we didn't find a non-zero element, the state space has no feedthrough
+    return false;
+}
+
+// Output: y[k] = C * x[k] + D * u[k]
+bool dsp_zss_vector_get_output(dsp_zss_t* const zss, const dsp_vector_t* const u, dsp_vector_t* const y) {
+    if (zss == NULL || u == NULL || y == NULL) { return false; }
+
+    // y[n] = C * x[n]
+    dsp_matrix_vector_multiply(y, zss->C, zss->x);
+
+    // y[n] += D * u[n]
+    dsp_matrix_vector_multiply_and_add_to_vector(y, zss->D, u);
+
+    return true;
+}
+
 // Update state: x[k+1] = A * x[k] + B * u[k]
 bool dsp_zss_vector_update_state(dsp_zss_t* const zss, const dsp_vector_t* const u) {
     if (zss == NULL || u == NULL) { return false; }
-    // swap states
+
+    // x[n+1] = A * x[n]
+    dsp_matrix_vector_multiply(zss->xn, zss->A, zss->x);
+
+    // x[n+1] += B * u[n]
+    dsp_matrix_vector_multiply_and_add_to_vector(zss->xn, zss->B, u);
+
+    // swap 
     dsp_vector_swap(zss->x, zss->xn);
 
-    dsp_matrix_vector_multiply(zss->xn, zss->A, zss->x);
-    dsp_matrix_vector_multiply_and_add_to_vector(zss->xn, zss->B, u);
+    // x now contains the updated state
     return true;
 }
 
+
+// Get output and update state
 // Output: y[k] = C * x[k] + D * u[k]
-bool dsp_zss_vector_output(dsp_zss_t* const zss, const dsp_vector_t* const u, dsp_vector_t* const y) {
+// Update state: x[k+1] = A * x[k] + B * u[k]
+bool dsp_zss_vector_update(dsp_zss_t* const zss, const dsp_vector_t* const u, dsp_vector_t* const y) {
+    return dsp_zss_vector_get_output(zss, u, y) && dsp_zss_vector_update_state(zss, u);
+}
+
+
+// Get Output
+bool dsp_zss_get_output(dsp_zss_t* const zss, const real_t* const u, real_t* const y) {
     if (zss == NULL || u == NULL || y == NULL) { return false; }
 
-    dsp_matrix_vector_multiply(y, zss->C, zss->x);
-    dsp_matrix_vector_multiply_and_add_to_vector(y, zss->D, u);
-    return true;
+    const dsp_vector_t u_vec = { .size = zss->B->columns, .elements =  (real_t* const) u }; // u will not be modified
+    dsp_vector_t y_vec = { .size = zss->C->rows, .elements = y };
+    return dsp_zss_vector_get_output(zss, &u_vec, &y_vec);
 }
 
-// Update state: x[k+1] = A * x[k] + B * u[k]
-// Output: y[k] = C * x[k] + D * u[k]
-bool dsp_zss_vector_update(dsp_zss_t* const zss, const dsp_vector_t* const u, dsp_vector_t* const y) {
-    return dsp_zss_vector_update_state(zss, u) && dsp_zss_vector_output(zss, u, y);
-}
-
-// Update
+// Update state
 bool dsp_zss_update_state(dsp_zss_t* const zss, const real_t* const u) {
     if (zss == NULL || u == NULL) { return false; }
 
     const dsp_vector_t u_vec = { .size = zss->B->columns, .elements =  (real_t* const) u }; // u will not be modified
     return dsp_zss_vector_update_state(zss, &u_vec);
 }
-bool dsp_zss_output(dsp_zss_t* const zss, const real_t* const u, real_t* const y) {
-    if (zss == NULL || u == NULL) { return false; }
 
-    const dsp_vector_t u_vec = { .size = zss->B->columns, .elements =  (real_t* const) u }; // u will not be modified
-    dsp_vector_t y_vec = { .size = zss->C->rows, .elements = y };
-    return dsp_zss_vector_output(zss, &u_vec, &y_vec);
-}
+// Get output and update state
 bool dsp_zss_update(dsp_zss_t* const zss, const real_t* const u, real_t* const y) {
-    if (zss == NULL || u == NULL) { return false; }
+    if (zss == NULL || u == NULL || y == NULL) { return false; }
 
     const dsp_vector_t u_vec = { .size = zss->B->columns, .elements = (real_t* const) u };
     dsp_vector_t y_vec = { .size = zss->C->rows, .elements = y };

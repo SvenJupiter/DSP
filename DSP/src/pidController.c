@@ -1,243 +1,357 @@
 #include <stdlib.h> // malloc, free
 #include <string.h> // memcpy, memset
 #include "DSP/Discrete/pidController.h"
+#include "DSP/Discrete/Discontinuous.h"
+
 
 #define PID_SIZE sizeof(dsp_pid_t)
 #define NEW_PID() malloc(PID_SIZE)
 
-// Create
-dsp_pid_t* dsp_pid_create(const real_t Kp, const real_t Ki, const real_t Kd, const real_t Ts, const s_approximation_t IF, const real_t Tf, const s_approximation_t DF) {
-    if (Ts == 0) { return NULL; }
-    if (Tf == 0) {return NULL; }
 
-    // Create a new PID-Controller
+
+dsp_pid_t* dsp_pid_create(const real_t Kp, const real_t Ki, const real_t Kd, const real_t N, const real_t Ts, const s_approximation_t IF, const s_approximation_t DF) {
+    if (N == 0 || Ts == 0) { return NULL; }
+
+    // Create new PID
     dsp_pid_t* const pid = NEW_PID();
     if (pid == NULL) { return NULL; }
-
-    // Initilize
     memset(pid, 0, PID_SIZE);
 
-    // Configure
-    if (dsp_pid_set_gains(pid, Kp, Ki, Kd)) {
-        if (dsp_pid_set_zss(pid, Ts, IF, Tf, DF)) {
-
-            // Return PID-Controller
-            return pid;
-        }
+    // configure PID
+    if (dsp_pid_configure(pid, Kp, Ki, Kd, N, Ts, IF, DF)) {
+        return pid;
     }
-
-    // Destroy
-    dsp_pid_destroy(pid);
-    return NULL;
+    else {
+        // Destroy PID
+        free(pid);
+        return NULL;
+    }
 }
 
-// Copy
 dsp_pid_t* dsp_pid_create_copy(const dsp_pid_t* const other) {
     if (other == NULL) { return NULL; }
 
-    // Create a new PID-Controller
+    // Create new PID
     dsp_pid_t* const pid = NEW_PID();
     if (pid == NULL) { return NULL; }
+    // memset(pid, 0, PID_SIZE);
 
-    // Copy parameters
+    // Copy
     memcpy(pid, other, PID_SIZE);
-
-    // Copy Integrator
-    pid->integrator = dsp_zss_create_copy(other->integrator);
-
-    // Copy Derivative
-    pid->derivative = dsp_zss_create_copy(other->derivative);
-
-    // check
-    if (pid->integrator == NULL || pid->derivative == NULL) {
-        dsp_pid_destroy(pid);
-        return NULL;
-    }
-    else {
-        return pid;
-    }
+    return pid;
 }
+
 bool dsp_pid_copy_assign(dsp_pid_t* const dest, const dsp_pid_t* const src) {
     if (dest == NULL || src == NULL) { return false; }
     if (dest == src) { return false; }
 
-    // Release internal arrays
-    dsp_pid_release_internal_arrays(dest);
-
-    // Copy parameters
+    // Copy
     memcpy(dest, src, PID_SIZE);
-
-    // Copy Integrator
-    dest->integrator = dsp_zss_create_copy(src->integrator);
-
-    // Copy Derivative
-    dest->derivative = dsp_zss_create_copy(src->derivative);
-
-    // check
-    if (dest->integrator == NULL || dest->derivative == NULL) {
-        return false;
-    }
-    else {
-        return true;
-    }
+    return true;
 }
 
-// Move
 dsp_pid_t* dsp_pid_create_move(dsp_pid_t* const other) {
     if (other == NULL) { return NULL; }
 
-    // Create a new PID-Controller
+    // Create new PID
     dsp_pid_t* const pid = NEW_PID();
     if (pid == NULL) { return NULL; }
+    // memset(pid, 0, PID_SIZE);
 
-    // Copy parameters
+    // Move
     memcpy(pid, other, PID_SIZE);
-
-    // Invalidate other parameters 
     memset(other, 0, PID_SIZE);
-
     return pid;
 }
+
 bool dsp_pid_move_assign(dsp_pid_t* const dest, dsp_pid_t* const src) {
     if (dest == NULL || src == NULL) { return false; }
     if (dest == src) { return false; }
 
-    // Release internal arrays
-    dsp_pid_release_internal_arrays(dest);
-
-    // Copy parameters
+    // Copy
     memcpy(dest, src, PID_SIZE);
-
-    // Invalidate other parameters 
     memset(src, 0, PID_SIZE);
-
     return true;
 }
 
-// Swap
 bool dsp_pid_swap(dsp_pid_t* const a, dsp_pid_t* const b) {
     if (a == NULL || b == NULL) { return false; }
     if (a == b) { return false; }
+
     dsp_pid_t temp = *a;
     *a = *b;
     *b = temp;
     return true;
 }
 
-// Destroy
-bool dsp_pid_release_internal_arrays(dsp_pid_t* const pid) {
-    if (pid == NULL) { return false; }
-    dsp_zss_destroy(pid->integrator);
-    dsp_zss_destroy(pid->derivative);
-    pid->integrator = NULL;
-    pid->derivative = NULL;
-    return true;
-}
 bool dsp_pid_destroy(dsp_pid_t* const pid) {
     if (pid == NULL) { return false; }
-    dsp_pid_release_internal_arrays(pid);
+
     free(pid);
     return true;
 }
 
-// Set
+
+
+
+bool dsp_pid_configure(dsp_pid_t* const pid, const real_t Kp, const real_t Ki, const real_t Kd, const real_t N, const real_t Ts, const s_approximation_t IF, const s_approximation_t DF) {
+    if (pid == NULL) { return false; }
+    if (N == 0 || Ts == 0) { return NULL; }
+    
+    dsp_pid_set_gains(pid, Kp, Ki, Kd);
+    dsp_pid_set_zss(pid, N, Ts, IF, DF);
+    return true;
+}
+
 bool dsp_pid_set_gains(dsp_pid_t* const pid, const real_t Kp, const real_t Ki, const real_t Kd) {
     if (pid == NULL) { return false; }
+    
     pid->Kp = Kp;
     pid->Ki = Ki;
     pid->Kd = Kd;
     return true;
 }
-bool dsp_pid_set_zss(dsp_pid_t* const pid, const real_t Ts, const s_approximation_t IF, const real_t Tf, const s_approximation_t DF) {
-    if (pid == NULL) { return false; }
-    if (Ts == 0) { return false; }
-    if (Tf == 0) {return false; }
-    dsp_pid_release_internal_arrays(pid);
 
-    pid->integrator = dsp_zss_create_integrator(1, Ts, IF, 0);
-    pid->derivative = dsp_zss_create_derivative(1, Tf, Ts, DF, 0);
-    return (pid->integrator != NULL && pid->derivative != NULL);
-}
-bool dsp_pid_set_initial_state(dsp_pid_t* const pid, const real_t* const xi0, const real_t* const xd0) {
+bool dsp_pid_set_zss(dsp_pid_t* const pid, const real_t N, const real_t Ts, const s_approximation_t IF, const s_approximation_t DF) {
     if (pid == NULL) { return false; }
-    dsp_zss_set_state(pid->integrator, xi0);
-    dsp_zss_set_state(pid->derivative, xd0);
+    if (N == 0 || Ts == 0) { return NULL; }
+
+    dsp_integrator_configure(&(pid->integrator), 1, Ts, IF, false, 1, -1);
+    dsp_derivative_configure(&(pid->derivative), 1, N, Ts, DF, false, 1, -1);
     return true;
 }
-bool dsp_reset(dsp_pid_t* const pid) {
+
+bool dsp_pid_set_initial_state(dsp_pid_t* const pid, const real_t xi0, const real_t xd0) {
     if (pid == NULL) { return false; }
-    dsp_zss_reset(pid->integrator);
-    dsp_zss_reset(pid->derivative);
+
+    dsp_integrator_set_state(&(pid->integrator), xi0);
+    dsp_derivative_set_state(&(pid->derivative), xd0);
     return true;
 }
+
+bool dsp_pid_reset(dsp_pid_t* const pid) {
+    return dsp_pid_set_initial_state(pid, 0, 0);
+}
+
 bool dsp_pid_set_output_saturation(dsp_pid_t* const pid, const bool limit_output, const real_t upper_limit, const real_t lower_limit) {
     if (pid == NULL) { return false; }
+
     pid->limit_output = limit_output;
     pid->upper_limit = upper_limit;
     pid->lower_limit = lower_limit;
+
+    // Update flags
+    switch (pid->anti_windup_method) {
+
+        case None:
+            pid->back_calculation_enabled = false; 
+            pid->clamping_enabled = false;
+            break;
+
+        case BackCalculation:
+            if (pid->limit_output) {
+                pid->back_calculation_enabled = true; 
+                pid->clamping_enabled = false;
+            }
+            else {
+                pid->back_calculation_enabled = false; 
+                pid->clamping_enabled = false;
+            }
+            break;
+
+        case Clamping:
+            if (pid->limit_output) {
+                pid->back_calculation_enabled = false; 
+                pid->clamping_enabled = true;
+            }
+            else {
+                pid->back_calculation_enabled = false; 
+                pid->clamping_enabled = false;
+            }
+            break;
+
+        default:
+            pid->back_calculation_enabled = false; 
+            pid->clamping_enabled = false;
+            break;
+    }
+
     return true;
 }
-bool dsp_pid_set_anti_windup(dsp_pid_t* const pid, const dsp_anti_windup_method_t anti_windup_method, real_t Kb) {
+
+bool dsp_pid_set_anti_windup_method(dsp_pid_t* const pid, const dsp_anti_windup_method_t anti_windup_method, const real_t Kb) {
     if (pid == NULL) { return false; }
+
     pid->anti_windup_method = anti_windup_method;
-    pid->Kb = Kb;
+    switch (pid->anti_windup_method) {
+
+        case None:
+            pid->back_calculation_enabled = false; 
+            pid->clamping_enabled = false;
+            break;
+
+        case BackCalculation:
+            pid->Kb = Kb;
+            if (pid->limit_output) {
+                pid->back_calculation_enabled = true; 
+                pid->clamping_enabled = false;
+            }
+            else {
+                pid->back_calculation_enabled = false; 
+                pid->clamping_enabled = false;
+            }
+            break;
+
+        case Clamping:
+            if (pid->limit_output) {
+                pid->back_calculation_enabled = false; 
+                pid->clamping_enabled = true;
+            }
+            else {
+                pid->back_calculation_enabled = false; 
+                pid->clamping_enabled = false;
+            }
+            break;
+
+        default:
+            pid->back_calculation_enabled = false; 
+            pid->clamping_enabled = false;
+            break;
+    }
     return true;
 }
-bool dsp_pid_set_tracking(dsp_pid_t* const pid, const bool tracking_enabled, real_t Kt) {
+
+bool dsp_pid_set_tracking_mode(dsp_pid_t* const pid, const dsp_tracking_mode_t tracking_mode, const real_t Kt) {
     if (pid == NULL) { return false; }
-    pid->tracking_enabled = tracking_enabled;
-    pid->Kt = Kt;
+
+    pid->tracking_mode = tracking_mode;
+    pid->Kt = (tracking_mode != Disabled ? Kt : 0);
     return true;
 }
 
 
-// Update
+
+// Output without Anti-Windup or Tracking
+real_t dsp_pid_get_output(dsp_pid_t* const pid, const real_t e, const real_t tr) { 
+    if (pid == NULL) { return 0; }
+
+    // Calculate P-Path
+    const real_t fromP = pid->Kp * e;
+
+    // Calculate D-Path
+    const real_t fromD = dsp_derivative_get_output(&(pid->derivative), pid->Kd * e);
+
+    // Predicted Output for Tracking and Anti-Windup
+    const real_t PreSat = fromP + pid->fromState + fromD;
+    const real_t PostSat = dsp_discontinuous_saturate_if(pid->limit_output, PreSat, pid->upper_limit, pid->lower_limit);
+
+    // Tracking
+    real_t fromTR;
+    switch (pid->tracking_mode) {
+        case Direct:
+            fromTR = pid->Kt * (tr - PostSat);
+            break;
+        case Delayed:
+            fromTR = pid->Kt * (tr - pid->Output);
+            break;
+        case Feedthrough:
+            fromTR = pid->Kt * tr;
+            break;
+        case Disabled: // Same as default case
+        default:
+            fromTR = 0;
+            break;
+    }
+
+    // Back Calculation
+    const real_t fromAW = (pid->back_calculation_enabled ? (pid->Kb * (PostSat - PreSat)) : 0);
+
+    // PreInt
+    const real_t preInt = pid->Ki * e + fromAW + fromTR;
+
+    // Clamping
+    const real_t toInt = dsp_discontinuous_clamp_if(
+        pid->clamping_enabled, preInt, 
+        pid->PreSat, pid->upper_limit, pid->lower_limit
+    );
+
+    // Update I-Path
+    const real_t fromI = dsp_integrator_get_output(&(pid->integrator), toInt);
+
+    // Calculate new Output
+    real_t Output = fromP + fromI + fromD;
+
+    // Saturate new Output
+    Output = dsp_discontinuous_saturate_if(pid->limit_output, Output, pid->upper_limit, pid->lower_limit);
+
+    // Return new Output
+    return Output;
+}
+
+
+
+bool dsp_pid_update_state(dsp_pid_t* const pid, const real_t e, const real_t tr) {
+    if (pid == NULL) { return 0; }
+
+    // Update P-Path
+    pid->fromP = pid->Kp * e;
+
+    // Update D-Path
+    pid->fromD = dsp_derivative_update(&(pid->derivative), pid->Kd * e);
+
+    // Predicted Output for Tracking and Anti-Windup
+    pid->PreSat = pid->fromP + pid->fromState + pid->fromD;
+    pid->PostSat = dsp_discontinuous_saturate_if(pid->limit_output, pid->PreSat, pid->upper_limit, pid->lower_limit);
+
+    // Tracking
+    switch (pid->tracking_mode) {
+        case Direct:
+            pid->fromTR = pid->Kt * (tr - pid->PostSat);
+            break;
+        case Delayed:
+            pid->fromTR = pid->Kt * (tr - pid->Output);
+            break;
+        case Feedthrough:
+            pid->fromTR = pid->Kt * tr;
+            break;
+        case Disabled: // Same as default case
+        default:
+            pid->fromTR = 0;
+            break;
+    }
+
+    // Back Calculation
+    pid->fromAW = (pid->back_calculation_enabled ? (pid->Kb * (pid->PostSat - pid->PreSat)) : 0);
+
+    // PreInt
+    pid->preInt = pid->Ki * e + pid->fromAW + pid->fromTR;
+
+    // Clamping
+    pid->toInt = dsp_discontinuous_clamp_if(
+        pid->clamping_enabled, pid->preInt, 
+        pid->PreSat, pid->upper_limit, pid->lower_limit
+    );
+
+    // Update I-Path
+    pid->fromI = dsp_integrator_update(&(pid->integrator), pid->toInt);
+    pid->fromState = dsp_integrator_get_state(&(pid->integrator));
+
+    // Calculate new Output
+    pid->Output = pid->fromP + pid->fromI + pid->fromD;
+
+    // Saturate new Output
+    pid->Output = dsp_discontinuous_saturate_if(pid->limit_output, pid->Output, pid->upper_limit, pid->lower_limit);
+
+    return true;
+}
+
+
 real_t dsp_pid_update(dsp_pid_t* const pid, const real_t e, const real_t tr) {
     if (pid == NULL) { return 0; }
 
-    // P
-    pid->fromP = pid->Kp * e;
+    // Update internal state
+    dsp_pid_update_state(pid, e, tr);
 
-    // I
-    pid->fromTR = (pid->tracking_enabled ? pid->Kt * (tr - pid->postSat) : 0);
-    pid->fromAW = (pid->limit_output && pid->anti_windup_method == BackCalculation ? pid->Kb * (pid->postSat - pid->preSat) : 0);
-    pid->preInt = pid->Ki * e + pid->fromTR + pid->fromAW;
-    if (pid->limit_output && pid->anti_windup_method == Clamping) {
-        if (pid->preSat > pid->upper_limit && pid->preInt > 0) {
-            pid->toInt = 0;
-        }
-        else if (pid->preSat < pid->lower_limit && pid->preInt < 0) {
-            pid->toInt = 0;
-        }
-        else {
-            pid->toInt = pid->preInt;
-        }
-    }
-    else {
-        pid->toInt = pid->preInt;
-    }
-    dsp_zss_update(pid->integrator, &(pid->toInt), &(pid->fromI));
-
-    // D 
-    pid->toDer = pid->Kd * e;
-    dsp_zss_update(pid->derivative, &(pid->toDer), &(pid->fromD));
-
-    // Saturation
-    pid->preSat = pid->fromP + pid->fromI + pid->fromD;
-    if (pid->limit_output) {
-        if (pid->preSat > pid->upper_limit) {
-            pid->postSat = pid->upper_limit;
-        }
-        else if (pid->preSat < pid->lower_limit) {
-            pid->postSat = pid->lower_limit;
-        }
-        else {
-            pid->postSat = pid->preSat;
-        }
-    }
-    else {
-        pid->postSat = pid->preSat;
-    }
-
-    return pid->postSat;
+    // Return new Output
+    return pid->Output;
 }

@@ -9,7 +9,10 @@
 // DSP-Discrete
 #include "DSP/Discrete/Signal.h"
 #include "DSP/Discrete/zStateSpace.h"
+#include "DSP/Discrete/Integrator.h"
+#include "DSP/Discrete/Derivative.h"
 #include "DSP/Discrete/pidController.h"
+#include "DSP/Discrete/Discontinuous.h"
 
 
 
@@ -467,7 +470,7 @@ void test_pid() {
     const size_t n_samples = 1 + roundf(duration / Ts);
 
     // Create state space object
-    dsp_pid_t* const pid = dsp_pid_create(1, 1, 1, Ts, ForwardEuler, 1, ForwardEuler);
+    dsp_pid_t* const pid = dsp_pid_create(1, 1, 1, 1, Ts,ForwardEuler, ForwardEuler);
 
     // Create Signals
     dsp_signal_t* const t = dsp_signal_create(n_samples);
@@ -502,10 +505,10 @@ void test_pid2() {
     const size_t n_samples = 1 + roundf(duration / Ts);
 
     // Create PID-Controller
-    dsp_pid_t* const pid = dsp_pid_create(3, 0.5, 0, Ts, ForwardEuler, 0.01, ForwardEuler);
+    dsp_pid_t* const pid = dsp_pid_create(3, 0.5, 0, 0.5, Ts, ForwardEuler, ForwardEuler);
     dsp_pid_set_output_saturation(pid, false, 1, 0);
-    dsp_pid_set_anti_windup(pid, None, 0.4);
-    dsp_pid_set_tracking(pid, true, 0.4);
+    dsp_pid_set_anti_windup_method(pid, None, 0.4);
+    dsp_pid_set_tracking_mode(pid, Direct, 0.4);
 
     // Create state space object
     dsp_zss_t* const pt1 = dsp_zss_create_pt1(2, 20, Ts, 0);
@@ -557,6 +560,226 @@ void test_pid2() {
     dsp_signal_destroy(m);
 }
 
+void test_quantizer() {
+
+    const real_t Ts = 0.0001;
+    const real_t duration = 1;
+    const size_t n_samples = 1 + roundf(duration / Ts);
+
+    // Create Quantizer
+    const size_t precision = 3;
+    dsp_quantization_t* const quantizer = dsp_rounding_create(precision, RoundMath);
+
+    // Create Signals
+    dsp_signal_t* const t = dsp_signal_create(n_samples);
+    dsp_signal_t* const u = dsp_signal_create(n_samples);
+    dsp_signal_t* const y = dsp_signal_create(n_samples);
+
+    real_t tk, uk, yk;
+    for (size_t k = 0; k < n_samples; ++k) {
+        tk = k * Ts;
+        uk = tk;
+        yk = dsp_quantizer_update(quantizer, uk);
+        // yk = powf(10, (-1) * ((real_t) precision));
+        // yk = quantizer->interval;
+
+        dsp_signal_push_back(t, &tk);
+        dsp_signal_push_back(u, &uk);
+        dsp_signal_push_back(y, &yk);
+    }
+
+    // Export
+    export_tuy("Quantizer-Test.csv", t, u, y);
+
+
+    // Destroy
+    dsp_quantizer_destroy(quantizer);
+    dsp_signal_destroy(t);
+    dsp_signal_destroy(u);
+    dsp_signal_destroy(y);
+
+}
+
+void test_schmitt_quantizer() {
+
+    const real_t f = 1; // Hz
+    const real_t w = 2 * M_PI * f;
+    const real_t Ts = 0.0001;
+    const real_t duration = 2;
+    const size_t n_samples = 1 + roundf(duration / Ts);
+
+    // Create Quantizer
+    const size_t precision = 3;
+    dsp_schmitt_quantization_t* const quantizer = dsp_schmitt_quantizer_create_relative(0.0f, 1.0f, 0.5, 0.3, 0.0f);
+
+    // Create Signals
+    dsp_signal_t* const t = dsp_signal_create(n_samples);
+    dsp_signal_t* const u = dsp_signal_create(n_samples);
+    dsp_signal_t* const y = dsp_signal_create(n_samples);
+
+    real_t tk, uk, yk;
+    for (size_t k = 0; k < n_samples; ++k) {
+        tk = k * Ts;
+        uk = 1.1 * sinf(w * tk);;
+        yk = dsp_schmitt_quantizer_update(quantizer, uk);
+
+        dsp_signal_push_back(t, &tk);
+        dsp_signal_push_back(u, &uk);
+        dsp_signal_push_back(y, &yk);
+    }
+
+    // Export
+    export_tuy("Schmitt-Quantizer-Test.csv", t, u, y);
+
+
+    // Destroy
+    dsp_schmitt_quantizer_destroy(quantizer);
+    dsp_signal_destroy(t);
+    dsp_signal_destroy(u);
+    dsp_signal_destroy(y);
+
+
+}
+
+void integrator_test() {
+
+    const real_t K = 1.5;
+    const real_t Ts = 0.1;
+    const bool limit = true;
+    const real_t UL = 1;
+    const real_t LL = 0;
+    const s_approximation_t IF = ForwardEuler;
+    const real_t duration = 4;
+    const size_t n_samples = 1 + roundf(duration / Ts);
+
+    // Create Integrator
+    dsp_integrator_t* integrator = dsp_integrator_create(K, Ts, IF, limit, UL, LL);
+
+    // Create Signals
+    dsp_signal_t* const t = dsp_signal_create(n_samples);
+    dsp_signal_t* const u = dsp_signal_create(n_samples);
+    dsp_signal_t* const x = dsp_signal_create(n_samples);
+    dsp_signal_t* const y = dsp_signal_create(n_samples);
+
+    real_t tk, uk, xk, yk;
+    for (size_t k = 0; k < n_samples; ++k) {
+        tk = k * Ts;
+
+
+        uk = step(tk, 1) - step(tk, 2) - step(tk, 2) + step(tk, 4);
+        xk = dsp_integrator_get_state(integrator);
+        yk = dsp_integrator_update(integrator, uk);
+
+
+        dsp_signal_push_back(t, &tk);
+        dsp_signal_push_back(u, &uk);
+        dsp_signal_push_back(x, &xk);
+        dsp_signal_push_back(y, &yk);
+    }
+
+    // Export
+    export_tuxy("Integrator-Test.csv", t, u, x, y);
+
+    dsp_signal_destroy(t);
+    dsp_signal_destroy(u);
+    dsp_signal_destroy(x);
+    dsp_signal_destroy(y);
+}
+
+void derivative_test() {
+
+    const real_t K = 5;
+    const real_t N = 5;
+    const real_t Ts = 0.1;
+    const real_t UL = 1;
+    const real_t LL = 0;
+    const s_approximation_t DF = ForwardEuler;
+    const real_t duration = 10;
+    const size_t n_samples = 1 + roundf(duration / Ts);
+
+    // Create Derivative
+    dsp_derivative_t* derivative = dsp_derivative_create(K, N, Ts, DF, true, UL, LL);
+
+    // Create Signals
+    dsp_signal_t* const t = dsp_signal_create(n_samples);
+    dsp_signal_t* const u = dsp_signal_create(n_samples);
+    dsp_signal_t* const y = dsp_signal_create(n_samples);
+
+    real_t tk, uk, yk = 0;
+    for (size_t k = 0; k < n_samples; ++k) {
+        tk = k * Ts;
+        uk = step(tk, 1);
+        yk = dsp_derivative_update(derivative, uk);
+
+        dsp_signal_push_back(t, &tk);
+        dsp_signal_push_back(u, &uk);
+        dsp_signal_push_back(y, &yk);
+    }
+
+    // Export
+    export_tuy("Derivative-Test.csv", t, u, y);
+
+    dsp_signal_destroy(t);
+    dsp_signal_destroy(u);
+    dsp_signal_destroy(y);
+}
+
+void test_pid3() {
+
+    const bool Limit = false;
+    const s_approximation_t IF = BackwardEuler;
+    const dsp_anti_windup_method_t AW = None;
+    const dsp_tracking_mode_t TM = Feedthrough;
+    const real_t Ts = 0.1;
+    const real_t duration = 10;
+    const size_t n_samples = 1 + roundf(duration / Ts);
+
+    // Create state space object
+    dsp_pid_t* const pid = dsp_pid_create(0.35, 1.5, 0, 5, Ts, IF, ForwardEuler);
+    dsp_pid_set_output_saturation(pid, Limit, 1, 0);
+    dsp_pid_set_anti_windup_method(pid, AW, 1);
+    dsp_pid_set_tracking_mode(pid, TM, 1);
+
+    // Create Signals
+    dsp_signal_t* const t = dsp_signal_create(n_samples);
+    dsp_signal_t* const u = dsp_signal_create(n_samples);
+    dsp_signal_t* const x = dsp_signal_create(n_samples);
+    dsp_signal_t* const y = dsp_signal_create(n_samples);
+
+    real_t tk = 0, uk = 0, xk = 0, yk = 0, temp = 0;
+    for (size_t k = 0; k < n_samples; ++k) {
+        tk = k * Ts;
+        uk = step(tk, 1) - step(tk, 2) - step(tk, 2) + step(tk, 4);
+        // yk = dsp_pid_update(pid, uk, yk);
+        yk = dsp_pid_update(pid, uk, yk - pid->Output);
+
+
+        dsp_signal_push_back(t, &tk);
+        dsp_signal_push_back(u, &uk);
+        // dsp_signal_push_back(x, &xk);
+        dsp_signal_push_back(y, &yk);
+        dsp_signal_push_back(x, &temp);
+
+        yk = (yk > 1 ? 1 : (yk < 0 ? 0 : yk));
+        yk = (tk >= 5 ? 0.5 : yk);
+        temp = pid->Output;
+
+
+    }
+
+    // Export
+    export_tuxy("PID3-Test.csv", t, u, x, y);
+
+    // Destroy
+    dsp_pid_destroy(pid);
+    dsp_signal_destroy(t);
+    dsp_signal_destroy(u);
+    dsp_signal_destroy(x);
+    dsp_signal_destroy(y);
+}
+
+
+
 int main() {
 
     printf("Hello World!\n");
@@ -574,7 +797,14 @@ int main() {
     // test_state_space_dd();
 
     // test_pid();
-    test_pid2();
+    // test_pid2();
+
+    // test_quantizer();
+    // test_schmitt_quantizer();
+
+    integrator_test();
+    // derivative_test();
+    // test_pid3();
 
     printf("Bye bye...\n");
 }

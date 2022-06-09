@@ -21,8 +21,10 @@ typedef struct zStateObserver {
     dsp_matrix_t* D; // Feedthrough matrix
     dsp_matrix_t* L; // Observer gain matrix
 
-    dsp_vector_t* xh; // Estimated state vector x[k]
-    dsp_vector_t* xn; // Estimated state vector x[k+1]
+    dsp_vector_t* xh; // Estimated state vector
+
+    // Internal
+    dsp_vector_t* xn; // Estimated state vector 
     dsp_vector_t* yh; // Estimated output
     dsp_vector_t* e; // Estimation error
 
@@ -73,13 +75,13 @@ DSP_FUNCTION bool dsp_zso_set_state(dsp_zso_t* const zso, const real_t* const x0
 DSP_FUNCTION bool dsp_zso_reset(dsp_zso_t* const zso);
 
 // Update
-DSP_FUNCTION bool dsp_zso_vector_update_state(dsp_zso_t* const zso, const dsp_vector_t* const u, const dsp_vector_t* const y);
-DSP_FUNCTION bool dsp_zso_vector_output(dsp_zso_t* const zso, dsp_vector_t* const xh);
+DSP_FUNCTION bool dsp_zso_vector_get_estimated_state(dsp_zso_t* const zso, dsp_vector_t* const xh);
+DSP_FUNCTION bool dsp_zso_vector_update_estimated_state(dsp_zso_t* const zso, const dsp_vector_t* const u, const dsp_vector_t* const y);
 DSP_FUNCTION bool dsp_zso_vector_update(dsp_zso_t* const zso, const dsp_vector_t* const u, const dsp_vector_t* const y, dsp_vector_t* const xh);
 
 // Update
-DSP_FUNCTION bool dsp_zso_update_state(dsp_zso_t* const zso, const real_t* const u, const real_t* const y);
-DSP_FUNCTION bool dsp_zso_output(dsp_zso_t* const zso, real_t* const xh);
+DSP_FUNCTION bool dsp_zso_get_estimated_state(dsp_zso_t* const zso, real_t* const xh);
+DSP_FUNCTION bool dsp_zso_update_estimated_state(dsp_zso_t* const zso, const real_t* const u, const real_t* const y);
 DSP_FUNCTION bool dsp_zso_update(dsp_zso_t* const zso, const real_t* const u, const real_t* const y, real_t* const xh);
 
 

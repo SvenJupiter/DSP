@@ -354,48 +354,68 @@ bool dsp_zso_reset(dsp_zso_t* const zso) {
 // y^[n] = C * x^[n] + D * u[n]
 // e[k] = y[k] - y^[k]
 // x^[n+1] = A * x^[n] + B * u[n] + L * e[k]
-bool dsp_zso_vector_update_state(dsp_zso_t* const zso, const dsp_vector_t* const u, const dsp_vector_t* const y) {
+bool dsp_zso_vector_get_estimated_state(dsp_zso_t* const zso, dsp_vector_t* const xh) {
+    if (zso == NULL || xh == NULL) { return false; }
+    return dsp_vector_copy_assign(xh, zso->xh);
+}
+
+bool dsp_zso_vector_update_estimated_state(dsp_zso_t* const zso, const dsp_vector_t* const u, const dsp_vector_t* const y) {
     if (zso == NULL || u == NULL || y == NULL) { return NULL; }
 
-    // swap states
-    dsp_vector_swap(zso->xh, zso->xn);
-
-    // y^[n] = C * x^[n] + D * u[n]
+    // y^[n] = C * x^[n]
     dsp_matrix_vector_multiply(zso->yh, zso->C, zso->xh);
+
+    // y^[n] *= D * u[n]
     dsp_matrix_vector_multiply_and_add_to_vector(zso->yh, zso->D, u);
+
+
 
     // e[k] = y[k] - y^[k]
     dsp_vector_subtract(zso->e, y, zso->yh);
 
-    // x^[n+1] = A * x^[n] + B * u[n] + L * e[k]
+
+
+    // x^[n+1] = A * x^[n]
     dsp_matrix_vector_multiply(zso->xn, zso->A, zso->xh);
+
+    // x^[n+1] += B * u[n]
     dsp_matrix_vector_multiply_and_add_to_vector(zso->xn, zso->B, u);
+
+    // x^[n+1] += L * e[k]
     dsp_matrix_vector_multiply_and_add_to_vector(zso->xn, zso->L, zso->e);
+
+
+
+    // swap states
+    dsp_vector_swap(zso->xh, zso->xn);
+
+    // xh now contains the updated state
     return true;
 }
-bool dsp_zso_vector_output(dsp_zso_t* const zso, dsp_vector_t* const xh) {
-    if (zso == NULL) { return false; }
-    return dsp_vector_copy_assign(xh, zso->xh);
-}
+
 bool dsp_zso_vector_update(dsp_zso_t* const zso, const dsp_vector_t* const u, const dsp_vector_t* const y, dsp_vector_t* const xh) {
-    return (dsp_zso_vector_update_state(zso, u, y) && dsp_zso_vector_output(zso, xh));
+    return (dsp_zso_vector_get_estimated_state(zso, xh) && dsp_zso_vector_update_estimated_state(zso, u, y));
 }
 
+
+
 // Update
-bool dsp_zso_update_state(dsp_zso_t* const zso, const real_t* const u, const real_t* const y) {
-    if (zso == NULL) { return false; }
-    const dsp_vector_t U = {.size = zso->B->columns, .elements = (real_t* const) u}; // u will not be modified
-    const dsp_vector_t Y = {.size = zso->C->rows, .elements = (real_t* const) y}; // y will not be modified
-    return dsp_zso_vector_update_state(zso, &U, &Y);
-}
-bool dsp_zso_output(dsp_zso_t* const zso, real_t* const xh) {
-    if (zso == NULL) { return false; }
+bool dsp_zso_get_estimated_state(dsp_zso_t* const zso, real_t* const xh) {
+    if (zso == NULL || xh == NULL) { return false; }
     if (zso->xh->elements == xh) { return false; }
     memcpy(xh, zso->xh->elements, zso->xh->size * sizeof(real_t));
     return true;
 }
+
+bool dsp_zso_update_estimated_state(dsp_zso_t* const zso, const real_t* const u, const real_t* const y) {
+    if (zso == NULL || u == NULL || y == NULL) { return false; }
+    const dsp_vector_t U = {.size = zso->B->columns, .elements = (real_t* const) u}; // u will not be modified
+    const dsp_vector_t Y = {.size = zso->C->rows, .elements = (real_t* const) y}; // y will not be modified
+    return dsp_zso_vector_update_estimated_state(zso, &U, &Y);
+}
+
 bool dsp_zso_update(dsp_zso_t* const zso, const real_t* const u, const real_t* const y, real_t* const xh) {
-    return (dsp_zso_update_state(zso, u, y) && dsp_zso_output(zso, xh)); 
+    return (dsp_zso_get_estimated_state(zso, xh) && dsp_zso_update_estimated_state(zso, u, y)); 
 }
 
 

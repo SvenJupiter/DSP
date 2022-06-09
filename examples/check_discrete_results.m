@@ -393,3 +393,213 @@ stairs(mt, mm)
 stairs(ct, cm)
 legend("Matlab", "C")
 title("m")
+
+
+%% Schmitt-Quantizer
+
+data = readmatrix('../build/examples/Schmitt-Quantizer-Test.csv');
+ct = data(:, 1);
+cu = data(:, 2);
+cy = data(:, 3);
+
+close all;
+
+figure
+hold on
+grid on
+plot(ct, cu)
+plot(ct, cy)
+xlabel("t")
+ylabel("u, y")
+legend("u", "y")
+title("Schmitt-Quantizer")
+
+figure
+hold on
+grid on
+plot(cu, cu)
+plot(cu, cy)
+xlabel("u")
+ylabel("y")
+legend("uu", "uy")
+title("Schmitt-Quantizer")
+
+
+%% Discrete Time Integrator
+
+data = readmatrix('../build/examples/Integrator-Test.csv');
+ct = data(:, 1);
+cu = data(:, 2);
+cx = data(:, 3);
+cy = data(:, 4);
+
+mut = out.mu.time;
+muv = out.mu.signals.values;
+myt = out.my.time;
+myv = out.my.signals.values;
+mxt = out.mx.time;
+mxv = out.mx.signals.values;
+
+close all;
+
+figure
+hold on
+grid on
+stairs(ct, cu)
+stairs(ct, cy)
+xlabel("t")
+ylabel("u, y")
+legend("u", "y")
+title("Integrator")
+
+figure
+hold on
+grid on
+stairs(myt, myv);
+stairs(ct, cy);
+xlabel("t")
+ylabel("y")
+legend("my", "cy")
+title("Output")
+
+figure
+hold on
+grid on
+stairs(mxt, mxv);
+stairs(ct, cx);
+xlabel("t")
+ylabel("x")
+legend("mx", "cx")
+title("State")
+
+
+
+%% Discrete Time Derivative
+
+data = readmatrix('../build/examples/Derivative-Test.csv');
+ct = data(:, 1);
+cu = data(:, 2);
+cy = data(:, 3);
+
+mut = out.mu.time;
+muv = out.mu.signals.values;
+myt = out.my.time;
+myv = out.my.signals.values;
+
+close all;
+
+figure
+hold on
+grid on
+stairs(ct, cu)
+stairs(ct, cy)
+xlabel("t")
+ylabel("u, y")
+legend("u", "y")
+title("Integrator")
+% 
+figure
+hold on
+grid on
+stairs(myt, myv);
+stairs(ct, cy);
+xlabel("t")
+ylabel("u")
+legend("my", "cy")
+title("Output")
+
+%% PID Clamping Test
+
+data = readmatrix('../build/examples/Pid-Clamping-Test.csv');
+ct = data(:, 1);
+cu = data(:, 2);
+cy = data(:, 3);
+
+mut = out.mu.time;
+muv = out.mu.signals.values;
+myt = out.my.time;
+myv = out.my.signals.values;
+
+close all;
+
+figure
+hold on
+grid on
+stairs(ct, cu)
+stairs(ct, cy)
+xlabel("t")
+ylabel("u, y")
+legend("u", "y")
+title("Integrator")
+
+
+figure
+hold on
+grid on
+stairs(myt, myv);
+stairs(ct, cy);
+xlabel("t")
+ylabel("u")
+legend("my", "cy")
+title("Output")
+
+%% PID3 Test
+
+data = readmatrix('../build/examples/PID3-Test.csv');
+ct = data(:, 1);
+cu = data(:, 2);
+cx = data(:, 3);
+cy = data(:, 4);
+
+mut = out.mu.time;
+muv = out.mu.signals.values;
+myt = out.my.time;
+myv = out.my.signals.values;
+mxt = out.mx.time;
+mxv = out.mx.signals.values;
+
+close all;
+
+% figure
+% hold on
+% grid on
+% % stairs(ct, cu)
+% stairs(ct, cy)
+% xlabel("t")
+% ylabel("u, y")
+% legend("y")
+% title("PID")
+
+
+figure
+hold on
+grid on
+stairs(myt, myv);
+stairs(ct, cy);
+xlabel("t")
+ylabel("u")
+legend("my", "cy")
+title("Output")
+
+% 
+% figure
+% hold on
+% grid on
+% stairs(ct, cy);
+% stairs(ct, cx);
+% xlabel("t")
+% ylabel("yx")
+% legend("cy", "cx")
+% title("fromI & State")
+
+
+
+% figure
+% hold on
+% grid on
+% stairs(mxt, mxv);
+% stairs(ct, cx);
+% xlabel("t")
+% ylabel("x")
+% legend("mx", "cx")
+% title("State")

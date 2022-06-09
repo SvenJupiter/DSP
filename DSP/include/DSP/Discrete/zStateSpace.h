@@ -21,8 +21,10 @@ typedef struct zStateSpace {
     dsp_matrix_t* C; // Output matrix
     dsp_matrix_t* D; // Feedthrough matrix
 
-    dsp_vector_t* x; // State vector x[k]
-    dsp_vector_t* xn; // State vector x[k+1]
+    dsp_vector_t* x; // State vector
+
+    // Internal
+    dsp_vector_t* xn; // State vector
 
 } dsp_zss_t;
 
@@ -190,18 +192,23 @@ DSP_FUNCTION bool dsp_zss_destroy(dsp_zss_t* const zss);
 // Set state
 DSP_FUNCTION bool dsp_zss_set_state_to(dsp_zss_t* const zss, const dsp_vector_t* const x0);
 DSP_FUNCTION bool dsp_zss_set_state(dsp_zss_t* const zss, const real_t* const x0);
+DSP_FUNCTION bool dsp_zss_set_initial_conditions_to(dsp_zss_t* const zss, const dsp_vector_t* const u0, const dsp_vector_t* const y0);
+DSP_FUNCTION bool dsp_zss_set_initial_conditions(dsp_zss_t* const zss, const real_t* const u0, const real_t* const y0);
 
 // Reset state
 DSP_FUNCTION bool dsp_zss_reset(dsp_zss_t* const zss);
 
-// Update
+// Check if the Feedthrough matrix is non-zero
+DSP_FUNCTION bool dsp_zss_has_feedthrough(const dsp_zss_t* const zss);
+
+// Get Output and Update State
+DSP_FUNCTION bool dsp_zss_vector_get_output(dsp_zss_t* const zss, const dsp_vector_t* const u, dsp_vector_t* const y);
 DSP_FUNCTION bool dsp_zss_vector_update_state(dsp_zss_t* const zss, const dsp_vector_t* const u);
-DSP_FUNCTION bool dsp_zss_vector_output(dsp_zss_t* const zss, const dsp_vector_t* const u, dsp_vector_t* const y);
 DSP_FUNCTION bool dsp_zss_vector_update(dsp_zss_t* const zss, const dsp_vector_t* const u, dsp_vector_t* const y);
 
-// Update
+// Get Output and Update State
+DSP_FUNCTION bool dsp_zss_get_output(dsp_zss_t* const zss, const real_t* const u, real_t* const y);
 DSP_FUNCTION bool dsp_zss_update_state(dsp_zss_t* const zss, const real_t* const u);
-DSP_FUNCTION bool dsp_zss_output(dsp_zss_t* const zss, const real_t* const u, real_t* const y);
 DSP_FUNCTION bool dsp_zss_update(dsp_zss_t* const zss, const real_t* const u, real_t* const y);
 
 
