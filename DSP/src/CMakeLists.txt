@@ -1,7 +1,7 @@
 
 # define Library "DSP"
 target_sources(DSPc PRIVATE 
-    Polynomial.c 
+    Polynomial.c
     Matrix.c
     Vector.c
     Signal.c

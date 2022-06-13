@@ -76,7 +76,7 @@ DSP_FUNCTION bool dsp_polynomial_grow_to(dsp_poly_t* const p, const size_t new_o
 
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 

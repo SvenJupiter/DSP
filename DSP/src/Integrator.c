@@ -10,7 +10,7 @@
 dsp_integrator_t* dsp_integrator_create(const real_t K, const real_t Ts, const s_approximation_t IF, const bool limit_output, const real_t upper_limit, const real_t lower_limit) {
 
     // Create a new integrator
-    dsp_integrator_t* const integrator = malloc(sizeof(dsp_integrator_t));
+    dsp_integrator_t* const integrator = (dsp_integrator_t*) malloc(sizeof(dsp_integrator_t));
     if (integrator == NULL) { return NULL; }
 
     if (dsp_integrator_configure(integrator, K, Ts, IF, limit_output, upper_limit, lower_limit)) {
@@ -26,7 +26,7 @@ dsp_integrator_t* dsp_integrator_create_copy(const dsp_integrator_t* const other
     if (other == NULL) { return NULL; }
 
     // Create a new integrator
-    dsp_integrator_t* const integrator = malloc(sizeof(dsp_integrator_t));
+    dsp_integrator_t* const integrator = (dsp_integrator_t*) malloc(sizeof(dsp_integrator_t));
     if (integrator == NULL) { return NULL; }
 
     if (dsp_integrator_copy_assign(integrator, other)) {

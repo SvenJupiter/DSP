@@ -247,7 +247,7 @@ DSP_FUNCTION real_t dsp_ztf_output(dsp_ztf_t* const ztf);
 
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 

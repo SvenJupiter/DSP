@@ -3,7 +3,7 @@
 #include "DSP/Discrete/Signal.h"
 
 #define SIGNAL_SIZE sizeof(dsp_signal_t)
-#define NEW_SIGNAL() malloc(SIGNAL_SIZE)
+#define NEW_SIGNAL() ((dsp_signal_t*) malloc(SIGNAL_SIZE))
 
 #define REAL_SIZE sizeof(real_t)
 #define ARRAY_SIZE(size) ((size) * REAL_SIZE)
@@ -140,13 +140,14 @@ dsp_signal_t* dsp_signal_create(const size_t initial_capacity) {
 
 // Create
 dsp_signal_t dsp_signal_construct(const size_t initial_capacity) {
-    dsp_signal_t vec = {
-        .elements = NULL,
-        .size = 0,
-        .capacity = 0
-    };
+    //dsp_signal_t vec = {
+    //    .elements = NULL,
+    //    .size = 0,
+    //    .capacity = 0
+    //};
+    dsp_signal_t vec = { NULL, 0, 0};
     if (initial_capacity > 0) {
-        vec.elements = malloc(initial_capacity * (sizeof(*(vec.elements))));
+        vec.elements = (real_t*) malloc(initial_capacity * (sizeof(*(vec.elements))));
         if (vec.elements != NULL) {
             vec.capacity = initial_capacity;
         }
@@ -277,7 +278,7 @@ size_t dsp_signal_deconv(dsp_signal_t* const q, dsp_signal_t* const r, const dsp
 void dsp_signal_reserve(dsp_signal_t* const signal, const size_t new_capacity) {
     if (signal == NULL) { return; }
     if (new_capacity <= signal->capacity) { return; }
-    real_t* const reallocated_elements = realloc(signal->elements, new_capacity * sizeof(*(signal->elements)));
+    real_t* const reallocated_elements = (real_t*) realloc(signal->elements, new_capacity * sizeof(*(signal->elements)));
     if (reallocated_elements != NULL) {
         signal->elements = reallocated_elements;
         signal->capacity = new_capacity;
@@ -306,7 +307,7 @@ void dsp_signal_resize(dsp_signal_t* const signal, const size_t new_size, const 
     }
     else {
         const size_t new_capacity = new_size;
-        real_t* const reallocated_elements = realloc(signal->elements, new_capacity * sizeof(real_t));
+        real_t* const reallocated_elements = (real_t*) realloc(signal->elements, new_capacity * sizeof(real_t));
         if (reallocated_elements != NULL) {
             signal->elements = reallocated_elements;
             signal->capacity = new_capacity;
@@ -333,7 +334,7 @@ void dsp_signal_shrink_to_fit(dsp_signal_t* const signal) {
         signal->capacity = 0;
     }
     else {
-        real_t* const reallocated_elements = realloc(signal->elements, new_capacity * sizeof(*(signal->elements)));
+        real_t* const reallocated_elements = (real_t*) realloc(signal->elements, new_capacity * sizeof(*(signal->elements)));
         if (reallocated_elements != NULL) {
             signal->elements = reallocated_elements;
             signal->capacity = new_capacity;
@@ -408,7 +409,7 @@ void dsp_signal_assign(dsp_signal_t* const signal, const real_t* const new_eleme
         signal->size = new_size;
     }
     else {
-        real_t* const reallocated_array = malloc(new_size * sizeof(real_t));
+        real_t* const reallocated_array = (real_t*) malloc(new_size * sizeof(real_t));
         if (reallocated_array != NULL) {
             if (signal->elements != NULL) { free(signal->elements); }
             signal->elements = reallocated_array;
@@ -425,7 +426,7 @@ void dsp_signal_push_back(dsp_signal_t* const signal, const real_t* const new_el
     if (new_element == NULL) { return; }
     if (signal->size == SIGNAL_MAX_CAPACITY) { return; }
     if (signal->capacity == 0) {
-        signal->elements = malloc(sizeof(real_t));
+        signal->elements = (real_t*) malloc(sizeof(real_t));
         if (signal->elements != NULL) {
             memcpy(signal->elements, new_element, sizeof(real_t));
             signal->size = 1;
@@ -438,7 +439,7 @@ void dsp_signal_push_back(dsp_signal_t* const signal, const real_t* const new_el
     }
     else {
         const size_t new_capacity = (((SIGNAL_MAX_CAPACITY / 2) < signal->capacity) ? SIGNAL_MAX_CAPACITY : 2 * signal->capacity);
-        real_t* const reallocated_elements = realloc(signal->elements, new_capacity * sizeof(real_t));
+        real_t* const reallocated_elements = (real_t*) realloc(signal->elements, new_capacity * sizeof(real_t));
         if (reallocated_elements != NULL) {
             signal->elements = reallocated_elements;
             signal->capacity = new_capacity;
@@ -460,7 +461,7 @@ void dsp_signal_pop_back(dsp_signal_t* const signal) {
             const size_t new_size = signal->size - 1;
             const size_t new_capacity = signal->capacity / 2;
             if (new_capacity > new_size) {
-                real_t* const new_array = realloc(signal->elements, new_capacity * sizeof(real_t));
+                real_t* const new_array = (real_t*) realloc(signal->elements, new_capacity * sizeof(real_t));
                 if (new_array != NULL) {
                     signal->elements = new_array;
                     signal->size = new_size;
@@ -487,7 +488,7 @@ real_t* dsp_signal_insert(dsp_signal_t* const signal, const size_t position, con
     if (position > signal->size) { return NULL; }
     else if (position == signal->size) {
         if (signal->capacity == 0) {
-            signal->elements = malloc(sizeof(real_t));
+            signal->elements = (real_t*) malloc(sizeof(real_t));
             if (signal->elements != NULL) {
                 memcpy(signal->elements, new_element, sizeof(real_t));
                 signal->size = 1;
@@ -505,7 +506,7 @@ real_t* dsp_signal_insert(dsp_signal_t* const signal, const size_t position, con
         }
         else {
             const size_t new_capacity = (((SIGNAL_MAX_CAPACITY / 2) < signal->capacity) ? SIGNAL_MAX_CAPACITY : 2 * signal->capacity);
-            real_t* const reallocated_elements = realloc(signal->elements, new_capacity * sizeof(real_t));
+            real_t* const reallocated_elements = (real_t*) realloc(signal->elements, new_capacity * sizeof(real_t));
             if (reallocated_elements != NULL) {
                 signal->elements = reallocated_elements;
                 signal->capacity = new_capacity;
@@ -527,7 +528,7 @@ real_t* dsp_signal_insert(dsp_signal_t* const signal, const size_t position, con
         }
         else {
             const size_t new_capacity = (((SIGNAL_MAX_CAPACITY / 2) < signal->capacity) ? SIGNAL_MAX_CAPACITY : 2 * signal->capacity);
-            real_t* const reallocated_array = malloc(new_capacity * sizeof(real_t));
+            real_t* const reallocated_array = (real_t*) malloc(new_capacity * sizeof(real_t));
             if (reallocated_array != NULL) {
                 if (position > 0) {
                     memcpy(reallocated_array, signal->elements, position * sizeof(real_t));
@@ -562,7 +563,7 @@ void dsp_signal_erase(dsp_signal_t* const signal, const size_t position) {
             const size_t new_size = signal->size - 1;
             const size_t new_capacity = signal->capacity / 2;
             if (new_capacity > new_size) {
-                real_t* const new_array = realloc(signal->elements, new_capacity * sizeof(real_t));
+                real_t* const new_array = (real_t*) realloc(signal->elements, new_capacity * sizeof(real_t));
                 if (new_array != NULL) {
                     signal->elements = new_array;
                     signal->size = new_size;
@@ -583,7 +584,7 @@ void dsp_signal_erase(dsp_signal_t* const signal, const size_t position) {
         const size_t new_size = signal->size - 1;
         const size_t new_capacity = signal->capacity / 2;
         if (new_capacity >= 4 && new_capacity > new_size) {
-            real_t* const new_array = malloc(new_capacity * sizeof(real_t));
+            real_t* const new_array = (real_t*) malloc(new_capacity * sizeof(real_t));
             if (new_array != NULL) {
                 if (position > 0) { memcpy(new_array, signal->elements, position * sizeof(real_t)); }
                 memcpy(&(new_array[position]), &(signal->elements[position+1]), (signal->size - (position + 1)) * sizeof(real_t));
@@ -632,7 +633,7 @@ real_t* dsp_signal_emplace(dsp_signal_t* const signal, const size_t position, co
     if (position > signal->size) { return NULL; }
     else if (position == signal->size) {
         if (signal->capacity == 0) {
-            signal->elements = malloc(sizeof(real_t));
+            signal->elements = (real_t*) malloc(sizeof(real_t));
             if (signal->elements != NULL) {
                 if (fill_zeros) { memset(signal->elements, 0, sizeof(real_t)); }
                 signal->size = 1;
@@ -650,7 +651,7 @@ real_t* dsp_signal_emplace(dsp_signal_t* const signal, const size_t position, co
         }
         else {
             const size_t new_capacity = (((SIGNAL_MAX_CAPACITY / 2) < signal->capacity) ? SIGNAL_MAX_CAPACITY : 2 * signal->capacity);
-            real_t* const reallocated_elements = realloc(signal->elements, new_capacity * sizeof(real_t));
+            real_t* const reallocated_elements = (real_t*) realloc(signal->elements, new_capacity * sizeof(real_t));
             if (reallocated_elements != NULL) {
                 signal->elements = reallocated_elements;
                 signal->capacity = new_capacity;
@@ -672,7 +673,7 @@ real_t* dsp_signal_emplace(dsp_signal_t* const signal, const size_t position, co
         }
         else {
             const size_t new_capacity = (((SIGNAL_MAX_CAPACITY / 2) < signal->capacity) ? SIGNAL_MAX_CAPACITY : 2 * signal->capacity);
-            real_t* const reallocated_array = malloc(new_capacity * sizeof(real_t));
+            real_t* const reallocated_array = (real_t*) malloc(new_capacity * sizeof(real_t));
             if (reallocated_array != NULL) {
                 if (position > 0) {
                     memcpy(reallocated_array, signal->elements, position * sizeof(real_t));
@@ -699,7 +700,7 @@ real_t* dsp_signal_emplace_back(dsp_signal_t* const signal, const bool fill_zero
     if (signal == NULL) { return NULL; }
     if (signal->size == SIGNAL_MAX_CAPACITY) { return NULL; }
     if (signal->capacity == 0) {
-        signal->elements = malloc(sizeof(real_t));
+        signal->elements = (real_t*) malloc(sizeof(real_t));
         if (signal->elements != NULL) {
             if (fill_zeros) { memset(signal->elements, 0, sizeof(real_t)); }
             signal->size = 1;
@@ -717,7 +718,7 @@ real_t* dsp_signal_emplace_back(dsp_signal_t* const signal, const bool fill_zero
     }
     else {
         const size_t new_capacity = (((SIGNAL_MAX_CAPACITY / 2) < signal->capacity) ? SIGNAL_MAX_CAPACITY : 2 * signal->capacity);
-        real_t* const reallocated_elements = realloc(signal->elements, new_capacity * sizeof(real_t));
+        real_t* const reallocated_elements = (real_t*) realloc(signal->elements, new_capacity * sizeof(real_t));
         if (reallocated_elements != NULL) {
             signal->elements = reallocated_elements;
             signal->capacity = new_capacity;

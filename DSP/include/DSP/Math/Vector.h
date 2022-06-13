@@ -149,7 +149,7 @@ DSP_FUNCTION bool dsp_solve(real_t* const x, const size_t x_size, const real_t* 
 
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 

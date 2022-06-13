@@ -3,7 +3,7 @@
 #include "DSP/Discrete/zStateObserver.h"
 
 #define ZSO_SIZE sizeof(dsp_zso_t)
-#define NEW_ZSO() malloc(ZSO_SIZE)
+#define NEW_ZSO() ((dsp_zso_t*) malloc(ZSO_SIZE))
 
 #define ARRAY_ELEMEMT(array, index) ((array)[(index)])
 #define VECTOR_ELEMENT(vec, index) ((vec)->elements[(index)])
@@ -124,7 +124,7 @@ dsp_zso_t* dsp_zso_create_from_zss(const dsp_zss_t* const zss, const real_t* con
 
 // Copy
 dsp_zso_t* dsp_zso_create_copy(const dsp_zso_t* const other) {
-    if (other == NULL) { return false; }
+    if (other == NULL) { return NULL; }
     dsp_zso_t* const zso = dsp_zso_create_from_matrices(other->A, other->B, other->C, other->D, other->L, other->xn->elements);
     if (zso != NULL) {
         if (dsp_vector_copy_assign(zso->xh, other->xh)) {
@@ -409,8 +409,10 @@ bool dsp_zso_get_estimated_state(dsp_zso_t* const zso, real_t* const xh) {
 
 bool dsp_zso_update_estimated_state(dsp_zso_t* const zso, const real_t* const u, const real_t* const y) {
     if (zso == NULL || u == NULL || y == NULL) { return false; }
-    const dsp_vector_t U = {.size = zso->B->columns, .elements = (real_t* const) u}; // u will not be modified
-    const dsp_vector_t Y = {.size = zso->C->rows, .elements = (real_t* const) y}; // y will not be modified
+    // const dsp_vector_t U = {.size = zso->B->columns, .elements = (real_t* const) u}; // u will not be modified
+    // const dsp_vector_t Y = {.size = zso->C->rows, .elements = (real_t* const) y}; // y will not be modified
+    const dsp_vector_t U = { zso->B->columns, (real_t* const) u }; // u will not be modified
+    const dsp_vector_t Y = { zso->C->rows, (real_t* const) y }; // y will not be modified
     return dsp_zso_vector_update_estimated_state(zso, &U, &Y);
 }
 

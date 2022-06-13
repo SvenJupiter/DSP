@@ -5,7 +5,7 @@
 
 
 #define ZSS_SIZE sizeof(dsp_zss_t)
-#define NEW_ZSS() malloc(ZSS_SIZE)
+#define NEW_ZSS() ((dsp_zss_t*) malloc(ZSS_SIZE))
 
 #define ARRAY_ELEMEMT(array, index) ((array)[(index)])
 #define POLYNOMIAL_ELEMENT(poly, index) ((poly)->a[(index)])
@@ -446,8 +446,10 @@ bool dsp_zss_set_initial_conditions_to(dsp_zss_t* const zss, const dsp_vector_t*
 }
 bool dsp_zss_set_initial_conditions(dsp_zss_t* const zss, const real_t* const u0, const real_t* const y0) {
     if (zss == NULL || u0 == NULL || y0 == NULL) { return false; }
-    dsp_vector_t U0 = { .elements = (real_t*) u0, .size = zss->B->columns };
-    dsp_vector_t Y0 = { .elements = (real_t*) y0, .size = zss->C->rows };
+    // dsp_vector_t U0 = { .elements = (real_t*) u0, .size = zss->B->columns };
+    //dsp_vector_t Y0 = { .elements = (real_t*) y0, .size = zss->C->rows };
+    dsp_vector_t U0 = { zss->B->columns, (real_t*) u0 };
+    dsp_vector_t Y0 = { zss->C->rows, (real_t*) y0 };
     return dsp_zss_set_initial_conditions_to(zss, &U0, &Y0);
 }
 
@@ -518,8 +520,10 @@ bool dsp_zss_vector_update(dsp_zss_t* const zss, const dsp_vector_t* const u, ds
 bool dsp_zss_get_output(dsp_zss_t* const zss, const real_t* const u, real_t* const y) {
     if (zss == NULL || u == NULL || y == NULL) { return false; }
 
-    const dsp_vector_t u_vec = { .size = zss->B->columns, .elements =  (real_t* const) u }; // u will not be modified
-    dsp_vector_t y_vec = { .size = zss->C->rows, .elements = y };
+    // const dsp_vector_t u_vec = { .size = zss->B->columns, .elements =  (real_t* const) u }; // u will not be modified
+    // dsp_vector_t y_vec = { .size = zss->C->rows, .elements = y };
+    const dsp_vector_t u_vec = { zss->B->columns, (real_t* const) u }; // u will not be modified
+    dsp_vector_t y_vec = { zss->C->rows, y };
     return dsp_zss_vector_get_output(zss, &u_vec, &y_vec);
 }
 
@@ -527,7 +531,8 @@ bool dsp_zss_get_output(dsp_zss_t* const zss, const real_t* const u, real_t* con
 bool dsp_zss_update_state(dsp_zss_t* const zss, const real_t* const u) {
     if (zss == NULL || u == NULL) { return false; }
 
-    const dsp_vector_t u_vec = { .size = zss->B->columns, .elements =  (real_t* const) u }; // u will not be modified
+    // const dsp_vector_t u_vec = { .size = zss->B->columns, .elements =  (real_t* const) u }; // u will not be modified
+	const dsp_vector_t u_vec = { zss->B->columns, (real_t* const) u }; // u will not be modified
     return dsp_zss_vector_update_state(zss, &u_vec);
 }
 
@@ -535,7 +540,9 @@ bool dsp_zss_update_state(dsp_zss_t* const zss, const real_t* const u) {
 bool dsp_zss_update(dsp_zss_t* const zss, const real_t* const u, real_t* const y) {
     if (zss == NULL || u == NULL || y == NULL) { return false; }
 
-    const dsp_vector_t u_vec = { .size = zss->B->columns, .elements = (real_t* const) u };
-    dsp_vector_t y_vec = { .size = zss->C->rows, .elements = y };
+    // const dsp_vector_t u_vec = { .size = zss->B->columns, .elements = (real_t* const) u };
+    // dsp_vector_t y_vec = { .size = zss->C->rows, .elements = y };
+    const dsp_vector_t u_vec = { zss->B->columns, (real_t* const) u };
+    dsp_vector_t y_vec = { zss->C->rows, y };
     return dsp_zss_vector_update(zss, &u_vec, &y_vec);
 }

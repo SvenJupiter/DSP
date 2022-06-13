@@ -86,7 +86,7 @@ DSP_FUNCTION bool dsp_zso_update(dsp_zso_t* const zso, const real_t* const u, co
 
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 

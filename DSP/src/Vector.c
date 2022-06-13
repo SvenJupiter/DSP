@@ -7,11 +7,11 @@
 
 
 #define VECTOR_SIZE sizeof(dsp_vector_t)
-#define NEW_VECTOR() malloc(VECTOR_SIZE)
+#define NEW_VECTOR() ((dsp_vector_t*) malloc(VECTOR_SIZE))
 
 #define REAL_SIZE sizeof(real_t)
 #define ARRAY_SIZE(size) ((size) * REAL_SIZE)
-#define NEW_ARRAY(size) malloc(ARRAY_SIZE(size))
+#define NEW_ARRAY(size) ((real_t*) malloc(ARRAY_SIZE(size)))
 #define ELEMENT(vec, index) ((vec)->elements[(index)])
 
 
@@ -156,7 +156,7 @@ dsp_vector_t* dsp_vector_create_solution(const dsp_matrix_t* const A, const dsp_
 
 // Concat
 dsp_vector_t* dsp_vector_create_concat(const dsp_vector_t* const T, const dsp_vector_t* const B) {
-    if (T == NULL || B == NULL) { return false; }
+    if (T == NULL || B == NULL) { return NULL; }
 
     // Create a new Vector
     dsp_vector_t* const vec = dsp_vector_create(T->size + B->size);
@@ -168,7 +168,7 @@ dsp_vector_t* dsp_vector_create_concat(const dsp_vector_t* const T, const dsp_ve
     }
     else {
         dsp_vector_destroy(vec);
-        return false;
+        return NULL;
     }
 }
 
@@ -791,11 +791,14 @@ bool dsp_vector_solve_lse(dsp_vector_t* const x, const dsp_matrix_t* const A, co
         dsp_vector_copy_assign(x, b);
 
         // Let B borrow the elements from x
-        dsp_matrix_t B = {
-            .rows = x->size,
-            .columns = 1,
-            .elements = x->elements
-        };
+        //dsp_matrix_t B = {
+        //    .rows = x->size,
+        //    .columns = 1,
+        //    .elements = x->elements
+        //};
+
+        // Let B borrow the elements from x
+        dsp_matrix_t B = { x->size, 1, x->elements};
 
         // create a copy of A
         dsp_matrix_t* const A_copy =  dsp_matrix_create_copy(A);
@@ -836,8 +839,12 @@ bool dsp_solve(real_t* const x, const size_t x_size, const real_t* const A, cons
     if (x == NULL || A == NULL || b == NULL) { return false; }
     if (x_size == 0 || b_size == 0) { return false; }
 
-    dsp_vector_t X = {.size = x_size, .elements = x};
-    const dsp_matrix_t M = {.rows = b_size, .columns = x_size, .elements = (real_t* const) A};
-    const dsp_vector_t B = {.size = b_size, .elements = (real_t* const) b};
+    //dsp_vector_t X = {.size = x_size, .elements = x};
+    //const dsp_matrix_t M = {.rows = b_size, .columns = x_size, .elements = (real_t* const) A};
+    //const dsp_vector_t B = {.size = b_size, .elements = (real_t* const) b};
+
+    dsp_vector_t X = {x_size, x};
+    const dsp_matrix_t M = {b_size, x_size, (real_t* const) A};
+    const dsp_vector_t B = {b_size, (real_t* const) b};
     return dsp_vector_solve_lse(&X, &M, &B);
 }

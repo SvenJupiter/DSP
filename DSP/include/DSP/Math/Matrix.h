@@ -115,7 +115,7 @@ DSP_FUNCTION bool dsp_matrix_modify_column(dsp_matrix_t* const mat, const size_t
 
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 

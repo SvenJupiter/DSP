@@ -1,15 +1,14 @@
-
 #include <stdlib.h> // malloc, realloc, free
 #include <string.h> // memcpy, memset, memmove
 #include "DSP/Math/Polynomial.h"
 #include "DSP/Math/Vector.h" // dsp_vector_solve
 
 #define POLYNOMIAL_SIZE sizeof(dsp_poly_t)
-#define NEW_POLY() malloc(POLYNOMIAL_SIZE)
+#define NEW_POLY() ((dsp_poly_t*) malloc(POLYNOMIAL_SIZE))
 
 #define REAL_SIZE sizeof(real_t)
 #define ARRAY_SIZE(order) (((order)+1) * REAL_SIZE)
-#define NEW_ARRAY(order) malloc(ARRAY_SIZE(order))
+#define NEW_ARRAY(order) ((real_t*) malloc(ARRAY_SIZE(order)))
 
 // Create a polynomial of size 'order' but don't initilize its coeffs
 dsp_poly_t* dsp_polynomial_create(const size_t order) {
@@ -299,16 +298,22 @@ bool dsp_polynomial_fit(dsp_poly_t* const p, const real_t* const x, const real_t
     dsp_matrix_t* const V = dsp_matrix_create_vandermonde(p->order, x, size);
 
     // Put y into a Vector struct
-    const dsp_vector_t Y = {
-        .elements = (real_t*) y,
-        .size = size
-    };
+    //const dsp_vector_t Y = {
+    //    .elements = (real_t*) y,
+    //    .size = size
+    //};
+
+    // Put y into a Vector struct
+    const dsp_vector_t Y = {size, (real_t*) y};
 
     // Put p into a Vector struct
-    dsp_vector_t P = {
-        .elements = p->a,
-        .size = p->order + 1
-    };
+    //dsp_vector_t P = {
+    //    .elements = p->a,
+    //    .size = p->order + 1
+    //};
+
+	// Put p into a Vector struct
+    dsp_vector_t P = {p->order + 1, p->a};
 
     // Solve
     if (dsp_vector_solve_lse(&P, V, &Y)) {
@@ -324,11 +329,14 @@ bool dsp_polyfit(real_t* const p, const size_t order, const real_t* const x, con
     if (p == NULL || x == NULL || y == NULL) { return false; }
     if (size == 0) { return false; }
 
+    //// Put p into a Polynomial struct
+    //dsp_poly_t P = {
+    //    .a = p,
+    //    .order = order
+    //};
+
     // Put p into a Polynomial struct
-    dsp_poly_t P = {
-        .a = p,
-        .order = order
-    };
+    dsp_poly_t P = { order, p };
 
     return dsp_polynomial_fit(&P, x, y, size);
 }
@@ -349,11 +357,14 @@ real_t dsp_polynomial_val(const dsp_poly_t* const p, const real_t x) {
 real_t dsp_polyval(const real_t* const p, const size_t order, const real_t x) {
     if (p == NULL) { return 0; }
 
+    //// Put p into a Polynomial struct
+    //const dsp_poly_t P = {
+    //    .a = (real_t*) p,
+    //    .order = order
+    //};
+
     // Put p into a Polynomial struct
-    const dsp_poly_t P = {
-        .a = (real_t*) p,
-        .order = order
-    };
+    const dsp_poly_t P = {order, (real_t*) p};
 
     return dsp_polynomial_val(&P, x);
 }
@@ -361,7 +372,7 @@ real_t dsp_polyval(const real_t* const p, const size_t order, const real_t x) {
 
 // Change size
 bool dsp_polynomial_shrink_to_fit(dsp_poly_t* const p) {
-    if (p == NULL) {return p; }
+    if (p == NULL) {return false; }
 
 
     // if (an != 0) => Nothing to do

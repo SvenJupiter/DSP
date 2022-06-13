@@ -92,7 +92,7 @@ DSP_FUNCTION real_t dsp_pid_update(dsp_pid_t* const pid, const real_t e, const r
 
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 

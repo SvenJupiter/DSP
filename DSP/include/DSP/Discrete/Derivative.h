@@ -57,7 +57,7 @@ DSP_FUNCTION real_t dsp_derivative_update(dsp_derivative_t* const derivative, co
 
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 

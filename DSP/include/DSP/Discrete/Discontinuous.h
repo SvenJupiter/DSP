@@ -98,7 +98,7 @@ DSP_FUNCTION bool dsp_schmitt_trigger_set_input_level(dsp_schmitt_trigger_t* con
 DSP_FUNCTION bool dsp_schmitt_trigger_set_output_level(dsp_schmitt_trigger_t* const trigger, const real_t low_level_output, const real_t high_level_output);
 DSP_FUNCTION bool dsp_schmitt_trigger_set_inverted(dsp_schmitt_trigger_t* const trigger, const bool inverted);
 DSP_FUNCTION bool dsp_schmitt_trigger_set_output(dsp_schmitt_trigger_t* const trigger, const bool high);
-DSP_FUNCTION bool dsp_schmitt_trigger_get_output(dsp_schmitt_trigger_t* const trigger);
+DSP_FUNCTION real_t dsp_schmitt_trigger_get_output(dsp_schmitt_trigger_t* const trigger);
 DSP_FUNCTION real_t dsp_schmitt_trigger_update(dsp_schmitt_trigger_t* const trigger, const real_t input_level);
 DSP_FUNCTION bool dsp_schmitt_trigger_destroy(dsp_schmitt_trigger_t* const trigger);
 
@@ -135,7 +135,7 @@ DSP_FUNCTION real_t dsp_discontinuous_clamp_if(const bool enabled, const real_t 
 
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 

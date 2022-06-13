@@ -35,7 +35,7 @@ real_t dsp_discontinuous_clamp_if(const bool enabled, const real_t x, const real
 
 
 dsp_saturation_t* dsp_saturation_create(const real_t upper_limit, const real_t lower_limit) {
-    dsp_saturation_t* const saturation = malloc(sizeof(dsp_saturation_t));
+    dsp_saturation_t* const saturation = (dsp_saturation_t*) malloc(sizeof(dsp_saturation_t));
     if (saturation == NULL) { return NULL; } 
 
     dsp_saturation_set_limits(saturation, upper_limit, lower_limit);
@@ -77,7 +77,7 @@ bool dsp_saturation_destroy(dsp_saturation_t* const saturation) {
 
 
 dsp_dead_zone_t* dsp_dead_zone_create(const real_t upper_limit, const real_t lower_limit) {
-    dsp_dead_zone_t* const dead_zone = malloc(sizeof(dsp_dead_zone_t));
+    dsp_dead_zone_t* const dead_zone = (dsp_dead_zone_t*) malloc(sizeof(dsp_dead_zone_t));
     if (dead_zone == NULL) { return NULL; } 
 
     dsp_dead_zone_set_limits(dead_zone, upper_limit, lower_limit);
@@ -116,7 +116,7 @@ bool dsp_dead_zone_destroy(dsp_dead_zone_t* const dead_zone) {
 
 
 dsp_rate_limiter_t* dsp_rate_limiter_create(const real_t upper_rate, const real_t lower_rate, const real_t Ts, const real_t initial_output) {
-    dsp_rate_limiter_t* const rate_limiter = malloc(sizeof(dsp_rate_limiter_t));
+    dsp_rate_limiter_t* const rate_limiter = (dsp_rate_limiter_t*) malloc(sizeof(dsp_rate_limiter_t));
     if (rate_limiter == NULL) { return NULL; }
 
     dsp_rate_limiter_set_limits(rate_limiter, upper_rate, lower_rate, Ts);
@@ -170,7 +170,7 @@ bool dsp_rate_limiter_destroy(dsp_rate_limiter_t* const rate_limiter) {
 
 
 dsp_quantization_t* dsp_quantizer_create(const real_t offset, const real_t interval, const rounding_method_t method) {
-    dsp_quantization_t* const quantizer = malloc(sizeof(dsp_quantization_t));
+    dsp_quantization_t* const quantizer = (dsp_quantization_t*) malloc(sizeof(dsp_quantization_t));
     if (quantizer == NULL) { return NULL; }
 
     dsp_quantizer_set_parameters(quantizer, offset, interval, method);
@@ -247,7 +247,7 @@ dsp_schmitt_trigger_t* dsp_schmitt_trigger_create (
     if (low_level_output >= high_level_output) { return NULL; }
 
     // Allocate a new Schmitt Trigger
-    dsp_schmitt_trigger_t* trigger = malloc(sizeof(dsp_schmitt_trigger_t));
+    dsp_schmitt_trigger_t* trigger = (dsp_schmitt_trigger_t*) malloc(sizeof(dsp_schmitt_trigger_t));
     if (trigger == NULL) { return NULL; }
 
     // Configure Schmitt Trigger
@@ -319,7 +319,7 @@ bool dsp_schmitt_trigger_set_output(dsp_schmitt_trigger_t* const trigger, const 
     return true;
 }
 
-bool dsp_schmitt_trigger_get_output(dsp_schmitt_trigger_t* const trigger) {
+real_t dsp_schmitt_trigger_get_output(dsp_schmitt_trigger_t* const trigger) {
     if (trigger == NULL) { return 0; }
     return (trigger->inverted ? trigger->inverted_output : trigger->normal_output);
 }
@@ -353,7 +353,7 @@ bool dsp_schmitt_trigger_destroy(dsp_schmitt_trigger_t* const trigger) {
 dsp_schmitt_quantization_t* dsp_schmitt_quantizer_create(const real_t offset, const real_t interval, const real_t high_level_hysteresis, const real_t low_level_hysteresis, const real_t initial_output) {
 
     // Allocate a new Schmitt Quantizer
-    dsp_schmitt_quantization_t* const quantizer = malloc(sizeof(dsp_schmitt_quantization_t));
+    dsp_schmitt_quantization_t* const quantizer = (dsp_schmitt_quantization_t*) malloc(sizeof(dsp_schmitt_quantization_t));
     if (quantizer == NULL) { return NULL; }
 
     // Configure Schmitt Quantizer

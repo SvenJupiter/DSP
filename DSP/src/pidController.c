@@ -5,7 +5,7 @@
 
 
 #define PID_SIZE sizeof(dsp_pid_t)
-#define NEW_PID() malloc(PID_SIZE)
+#define NEW_PID() ((dsp_pid_t*) malloc(PID_SIZE))
 
 
 

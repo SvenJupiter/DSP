@@ -3,11 +3,11 @@
 #include "DSP/Math/Matrix.h"
 
 #define MATRIX_SIZE sizeof(dsp_matrix_t)
-#define NEW_MATRIX() malloc(MATRIX_SIZE)
+#define NEW_MATRIX() ((dsp_matrix_t*) malloc(MATRIX_SIZE))
 
 #define REAL_SIZE sizeof(real_t)
 #define ARRAY_SIZE(rows, columns) ((rows) * (columns) * REAL_SIZE)
-#define NEW_ARRAY(rows, columns) malloc(ARRAY_SIZE(rows, columns))
+#define NEW_ARRAY(rows, columns) ((real_t*) malloc(ARRAY_SIZE(rows, columns)))
 #define ELEMENT(mat, row_index, column_index) ((mat)->elements[(row_index) * mat->columns + (column_index)])
 
 
@@ -379,7 +379,7 @@ bool dsp_matrix_set_to_eye(dsp_matrix_t* const mat) {
 
     for (size_t i = 0; i < mat->rows; ++i) {
         for (size_t j = 0; j < mat->columns; ++j) {
-            ELEMENT(mat, j, i) = (i == j ? 1 : 0);
+            ELEMENT(mat, j, i) = (i == j ? 1.0f : 0.0f);
         }
     }
     return true;

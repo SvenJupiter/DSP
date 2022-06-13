@@ -213,7 +213,7 @@ DSP_FUNCTION bool dsp_zss_update(dsp_zss_t* const zss, const real_t* const u, re
 
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 

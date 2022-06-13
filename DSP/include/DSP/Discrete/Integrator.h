@@ -52,7 +52,7 @@ DSP_FUNCTION real_t dsp_integrator_update(dsp_integrator_t* const integrator, co
 
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 

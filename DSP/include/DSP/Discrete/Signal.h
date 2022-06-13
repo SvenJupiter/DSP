@@ -120,7 +120,7 @@ DSP_FUNCTION real_t* dsp_signal_emplace_back(dsp_signal_t* const signal, const b
 
 
 #ifdef __cplusplus
-};
+}
 #endif
 
 

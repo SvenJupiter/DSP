@@ -7,7 +7,7 @@
 dsp_derivative_t* dsp_derivative_create(const real_t K, const real_t N, const real_t Ts, const s_approximation_t DF, const bool limit_output, const real_t upper_limit, const real_t lower_limit) {
 
     // Create a new derivative
-    dsp_derivative_t* const derivative = malloc(sizeof(dsp_derivative_t));
+    dsp_derivative_t* const derivative = (dsp_derivative_t*) malloc(sizeof(dsp_derivative_t));
     if (derivative == NULL) { return 0; }
 
     if (dsp_derivative_configure(derivative, K, N, Ts, DF, limit_output, upper_limit, lower_limit)) {
@@ -23,7 +23,7 @@ dsp_derivative_t* dsp_derivative_create_copy(const dsp_derivative_t* const other
     if (other == NULL) { return NULL; }
 
     // Create a new derivative
-    dsp_derivative_t* const derivative = malloc(sizeof(dsp_derivative_t));
+    dsp_derivative_t* const derivative = (dsp_derivative_t*) malloc(sizeof(dsp_derivative_t));
     if (derivative == NULL) { return NULL; }
 
     if (dsp_derivative_copy_assign(derivative, other)) {

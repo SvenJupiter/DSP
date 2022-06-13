@@ -1,14 +1,15 @@
+// #include "stdafx.h"
 #include <stdlib.h> // malloc, free
 #include <string.h> // memcpy, memset, memmove
 #include <math.h> // expf
 #include "DSP/Discrete/zTransferFunction.h"
 
 #define ZFT_SIZE sizeof(dsp_ztf_t)
-#define NEW_ZTF() malloc(ZFT_SIZE)
+#define NEW_ZTF() ((dsp_ztf_t*) malloc(ZFT_SIZE))
 
 #define REAL_SIZE sizeof(real_t)
 #define ARRAY_SIZE(order) ((order+1) * REAL_SIZE)
-#define NEW_ARRAY(order) malloc(ARRAY_SIZE(order))
+#define NEW_ARRAY(order) ((real_t*) malloc(ARRAY_SIZE(order)))
 
 
 static real_t dot_product(const real_t* const v1, const real_t* const v2, const size_t size) {
