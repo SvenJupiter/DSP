@@ -6,6 +6,7 @@ if (BUILD_STATIC_DSP_LIB)
 
     # define Library "DSPc"
     add_library(DSPc STATIC "")
+    set_target_properties(DSPc PROPERTIES SUFFIX ".lib")
     target_include_directories(DSPc INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
     target_include_directories(DSPc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
     target_compile_options(DSPc PRIVATE -Werror -Wall -Wextra -pedantic)

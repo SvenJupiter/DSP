@@ -463,102 +463,6 @@ void test_state_space_dd() {
     dsp_signal_destroy(y);
 }
 
-void test_pid() {
-
-    const real_t Ts = 0.1;
-    const real_t duration = 10000;
-    const size_t n_samples = 1 + roundf(duration / Ts);
-
-    // Create state space object
-    dsp_pid_t* const pid = dsp_pid_create(1, 1, 1, 1, Ts,ForwardEuler, ForwardEuler);
-
-    // Create Signals
-    dsp_signal_t* const t = dsp_signal_create(n_samples);
-    dsp_signal_t* const u = dsp_signal_create(n_samples);
-    dsp_signal_t* const y = dsp_signal_create(n_samples);
-
-    real_t tk, uk, yk;
-    for (size_t k = 0; k < n_samples; ++k) {
-        tk = k * Ts;
-        uk = 1;
-        yk = dsp_pid_update(pid, uk, 0);
-
-        dsp_signal_push_back(t, &tk);
-        dsp_signal_push_back(u, &uk);
-        dsp_signal_push_back(y, &yk);
-    }
-
-    // Export
-    export_tuy("PID-Test.csv", t, u, y);
-
-    // Destroy
-    dsp_pid_destroy(pid);
-    dsp_signal_destroy(t);
-    dsp_signal_destroy(u);
-    dsp_signal_destroy(y);
-}
-
-void test_pid2() {
-
-    const real_t Ts = 1;
-    const real_t duration = 100;
-    const size_t n_samples = 1 + roundf(duration / Ts);
-
-    // Create PID-Controller
-    dsp_pid_t* const pid = dsp_pid_create(3, 0.5, 0, 0.5, Ts, ForwardEuler, ForwardEuler);
-    dsp_pid_set_output_saturation(pid, false, 1, 0);
-    dsp_pid_set_anti_windup_method(pid, None, 0.4);
-    dsp_pid_set_tracking_mode(pid, Direct, 0.4);
-
-    // Create state space object
-    dsp_zss_t* const pt1 = dsp_zss_create_pt1(2, 20, Ts, 0);
-
-    // Create Signals
-    dsp_signal_t* const t = dsp_signal_create(n_samples);
-    dsp_signal_t* const r = dsp_signal_create(n_samples);
-    dsp_signal_t* const e = dsp_signal_create(n_samples);
-    dsp_signal_t* const x = dsp_signal_create(n_samples);
-    dsp_signal_t* const u = dsp_signal_create(n_samples);
-    dsp_signal_t* const y = dsp_signal_create(n_samples);
-    dsp_signal_t* const m = dsp_signal_create(n_samples);
-
-    real_t tk, rk, ek, xk, uk = 0, yk = 0, mk;
-    for (size_t k = 0; k < n_samples; ++k) {
-        tk = k * Ts;
-
-        rk = step(tk, 1);
-        mk = yk;
-        ek = rk - mk;
-        xk = dsp_pid_update(pid, ek, uk);
-
-        // Limit
-        uk = (xk > 1 ? 1 : (xk < 0 ? 0 : xk));
-
-        dsp_zss_update(pt1, &uk, &yk);
-
-        dsp_signal_push_back(t, &tk);
-        dsp_signal_push_back(r, &rk);
-        dsp_signal_push_back(e, &ek);
-        dsp_signal_push_back(x, &xk);
-        dsp_signal_push_back(u, &uk);
-        dsp_signal_push_back(y, &yk);
-        dsp_signal_push_back(m, &mk);
-    }
-
-    // Export
-    export_trexuym("PID2-Test.csv", t, r, e, x, u, y, m);
-
-    // Destroy
-    dsp_pid_destroy(pid);
-    dsp_zss_destroy(pt1);
-    dsp_signal_destroy(t);
-    dsp_signal_destroy(r);
-    dsp_signal_destroy(e);
-    dsp_signal_destroy(x);
-    dsp_signal_destroy(u);
-    dsp_signal_destroy(y);
-    dsp_signal_destroy(m);
-}
 
 void test_quantizer() {
 
@@ -724,21 +628,43 @@ void derivative_test() {
     dsp_signal_destroy(y);
 }
 
-void test_pid3() {
+void test_pid() {
 
-    const bool Limit = false;
-    const s_approximation_t IF = BackwardEuler;
-    const dsp_anti_windup_method_t AW = None;
-    const dsp_tracking_mode_t TM = Feedthrough;
-    const real_t Ts = 0.1;
+    // Simulation Time
+    const real_t Ts = 0.1f;
     const real_t duration = 10;
     const size_t n_samples = 1 + roundf(duration / Ts);
 
-    // Create state space object
-    dsp_pid_t* const pid = dsp_pid_create(0.35, 1.5, 0, 5, Ts, IF, ForwardEuler);
-    dsp_pid_set_output_saturation(pid, Limit, 1, 0);
-    dsp_pid_set_anti_windup_method(pid, AW, 1);
-    dsp_pid_set_tracking_mode(pid, TM, 1);
+    // PID -Parameter
+    const real_t Kp = 0.35f;
+    const real_t Ki = 1.5f;
+    const real_t Kd = 0.0f;
+    const real_t N = 0.5f / Ts;
+
+    // Saturation
+    const bool LimitOutput = true;
+    const real_t upper_limit = 1;
+    const real_t lower_limit = 0;
+
+    // Rate Limitation
+    const bool LimitRate = true;
+    const real_t rising_slew_rate = 0.1;
+    const real_t falling_slew_rate = -0.1;
+
+    // Anti-Windup
+    const bool anti_windup_enabled = true;
+    const real_t Kb = 2 * Ki;
+
+    // Tracking
+    const bool tracking_enabled = false;
+    const real_t Kt = 1;
+
+    // Create pid object
+    dsp_pid_t* const pid = dsp_pid_create_controller(Ts, Kp, Ki, Kd, N);
+    dsp_pid_set_output_saturation(pid, LimitOutput, upper_limit, lower_limit);
+    dsp_pid_set_output_rate_limitation(pid, LimitRate, rising_slew_rate, falling_slew_rate);
+    dsp_pid_set_anti_windup(pid, anti_windup_enabled, Kb);
+    dsp_pid_set_tracking(pid, tracking_enabled, Kt);
 
     // Create Signals
     dsp_signal_t* const t = dsp_signal_create(n_samples);
@@ -750,8 +676,8 @@ void test_pid3() {
     for (size_t k = 0; k < n_samples; ++k) {
         tk = k * Ts;
         uk = step(tk, 1) - step(tk, 2) - step(tk, 2) + step(tk, 4);
-        // yk = dsp_pid_update(pid, uk, yk);
-        yk = dsp_pid_update(pid, uk, yk - pid->Output);
+        temp = pid->pidsum;
+        yk = dsp_pid_update(pid, uk);
 
 
         dsp_signal_push_back(t, &tk);
@@ -760,15 +686,15 @@ void test_pid3() {
         dsp_signal_push_back(y, &yk);
         dsp_signal_push_back(x, &temp);
 
-        yk = (yk > 1 ? 1 : (yk < 0 ? 0 : yk));
-        yk = (tk >= 5 ? 0.5 : yk);
-        temp = pid->Output;
+        // yk = (yk > 1 ? 1 : (yk < 0 ? 0 : yk));
+        // yk = (tk >= 5 ? 0.5 : yk);
+        // temp = pid->Output;
 
 
     }
 
     // Export
-    export_tuxy("PID3-Test.csv", t, u, x, y);
+    export_tuxy("PID-Test.csv", t, u, x, y);
 
     // Destroy
     dsp_pid_destroy(pid);
@@ -777,6 +703,7 @@ void test_pid3() {
     dsp_signal_destroy(x);
     dsp_signal_destroy(y);
 }
+
 
 
 
@@ -796,15 +723,13 @@ int main() {
     // test_state_space_di();
     // test_state_space_dd();
 
-    // test_pid();
-    // test_pid2();
-
     // test_quantizer();
     // test_schmitt_quantizer();
 
-    integrator_test();
+    // integrator_test();
     // derivative_test();
-    // test_pid3();
+
+    test_pid();
 
     printf("Bye bye...\n");
 }
